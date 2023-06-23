@@ -315,17 +315,21 @@ class vso_controler(object): # visual odometry drone controler
     def calculate_vel(self,pose):
 
         v_x_raw, v_y_raw, v_z, v_ang = self.pid_update(pose)
-        ang_vel_z = self.positioning_vel[3] #angular vel on z
-        # delta_x = (-v_y_raw*ang_vel_z)
-        # delta_y = (v_x_raw*ang_vel_z)
-        # print(delta_x)
-        # print(delta_y)
-        # v_x_raw+=(-v_y_raw*ang_vel_z)*5
-        # v_y_raw+=(v_x_raw*ang_vel_z)*5
-        ang_z = self.euler_from_pose(pose)[2]
-        v_x = np.cos(ang_z)*v_x_raw+np.sin(ang_z)*v_y_raw
-        v_y = np.cos(ang_z)*v_y_raw-np.sin(ang_z)*v_x_raw
+        # last_v_x = self.positioning_vel[0] #last x vel commnad
+        # last_v_y = self.positioning_vel[1]  #last y vel commnad
+        last_ang_vel_z = self.positioning_vel[3] #last angular vel commnad
+        
 
+        ang_z = self.euler_from_pose(pose)[2]
+        
+        if np.abs(last_ang_vel_z) < 1e-3: 
+            v_x = np.cos(ang_z)*v_x_raw+np.sin(ang_z)*v_y_raw
+            v_y = np.cos(ang_z)*v_y_raw-np.sin(ang_z)*v_x_raw
+        else:
+            # TODO: correct drift,  correct velocity commands for higher angular speeds
+            v_x = np.cos(ang_z)*v_x_raw+np.sin(ang_z)*v_y_raw
+            v_y = np.cos(ang_z)*v_y_raw-np.sin(ang_z)*v_x_raw
+    
         # if self.count_aligned > 3:
         # if self.aligned_xyz:
         #     v_x = 0.0
@@ -334,8 +338,6 @@ class vso_controler(object): # visual odometry drone controler
         #     # pass
         # else:
         #     v_ang = 0.0
-
-        # v_x, v_y, v_z = np.dot(self.current_pose_np[:3,:3],np.array([v_x,v_y,v_z])).tolist()
         return [v_x, v_y, v_z, v_ang]
     def reset_pid(self):
         # self.pid_setpoint(self.current_pose)
